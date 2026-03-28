@@ -176,6 +176,17 @@
       cursor: not-allowed;
       opacity: 0.5;
     }
+
+    .button-download {
+      background: #00aa00;
+      color: #fff;
+      border: 1px solid #00ff00;
+    }
+
+    .button-download:hover {
+      background: #00ff00;
+      color: #0a0e27;
+    }
     
     .button-group {
       display: flex;
@@ -402,7 +413,7 @@
         
         <div class="loading" id="loading">
           <div class="spinner"></div>
-          <p style="margin-top: 10px;">Procesando...</p>
+          <p style="margin-top: 10px; font-size: 12px;">Procesando...</p>
         </div>
         
         <div id="message"></div>
@@ -413,88 +424,25 @@
         <h2>📊 Análisis de Características</h2>
         
         <div id="analysisResults" style="display: none;">
-          <div class="results">
-            <!-- Información Básica -->
-            <div class="result-section">
-              <div class="result-section-title">📐 INFORMACIÓN BÁSICA</div>
-              <div class="result-item">
-                <span class="result-label">Dimensiones:</span>
-                <span class="result-value" id="dimensions">-</span>
-              </div>
-              <div class="result-item">
-                <span class="result-label">Calidad:</span>
-                <span class="result-value" id="quality">-</span>
-              </div>
+          <div class="results" id="resultsContent">
+            <!-- Los resultados se inyectarán aquí -->
+          </div>
+          
+          <div class="comparison" id="comparisonPanel" style="display: none;">
+            <div class="comparison-item">
+              <div class="comparison-label">ORIGINAL</div>
+              <img id="originalImg" src="" alt="Original">
             </div>
-            
-            <!-- Características de Crestas -->
-            <div class="result-section">
-              <div class="result-section-title">🔀 CARACTERÍSTICAS DE CRESTAS</div>
-              <div class="result-item">
-                <span class="result-label">Densidad de Crestas:</span>
-                <span class="result-value" id="ridgeDensity">-</span>
-              </div>
-              <div class="result-item">
-                <span class="result-label">Orientación:</span>
-                <span class="result-value" id="ridgeOrientation">-</span>
-              </div>
-              <div class="result-item">
-                <span class="result-label">Patrón Detectado:</span>
-                <span class="result-value" id="pattern">-</span>
-              </div>
+            <div class="comparison-item">
+              <div class="comparison-label">PROCESADA</div>
+              <img id="processedImg" src="" alt="Procesada">
             </div>
-            
-            <!-- Puntos Característicos -->
-            <div class="result-section">
-              <div class="result-section-title">🎯 PUNTOS CARACTERÍSTICOS</div>
-              <div class="result-item">
-                <span class="result-label">Bifurcaciones:</span>
-                <span class="result-value" id="bifurcations">-</span>
-              </div>
-              <div class="result-item">
-                <span class="result-label">Terminaciones:</span>
-                <span class="result-value" id="terminations">-</span>
-              </div>
-            </div>
-            
-            <!-- Puntos de Referencia -->
-            <div class="result-section">
-              <div class="result-section-title">📍 PUNTOS DE REFERENCIA</div>
-              <div class="result-item">
-                <span class="result-label">Core:</span>
-                <span class="result-value" id="coreLocation">-</span>
-              </div>
-              <div class="result-item">
-                <span class="result-label">Deltas:</span>
-                <span class="result-value" id="deltaCount">-</span>
-              </div>
-            </div>
-            
-            <!-- Análisis de Textura -->
-            <div class="result-section">
-              <div class="result-section-title">🌊 ANÁLISIS DE TEXTURA</div>
-              <div class="result-item">
-                <span class="result-label">Tamaño de Poros:</span>
-                <span class="result-value" id="poreSize">-</span>
-              </div>
-              <div class="result-item">
-                <span class="result-label">Granularidad:</span>
-                <span class="result-value" id="granularity">-</span>
-              </div>
-              <div class="result-item">
-                <span class="result-label">Media de Intensidad:</span>
-                <span class="result-value" id="intensityMean">-</span>
-              </div>
-            </div>
-            
-            <!-- Metadata -->
-            <div class="result-section">
-              <div class="result-section-title">⏰ METADATA</div>
-              <div class="result-item">
-                <span class="result-label">Timestamp:</span>
-                <span class="result-value" id="timestamp">-</span>
-              </div>
-            </div>
+          </div>
+
+          <div id="downloadSection" style="display: none; margin-top: 20px;">
+            <button class="button button-download" id="downloadPngBtn" style="width: 100%;">
+              📥 DESCARGAR PNG FINAL (ACOPLADO)
+            </button>
           </div>
         </div>
         
@@ -503,41 +451,31 @@
         </div>
       </div>
     </div>
-    
-    <!-- Comparación Antes/Después -->
-    <div class="panel" id="comparisonPanel" style="display: none;">
-      <h2>🔄 Comparación Original vs Procesada</h2>
-      <div class="comparison">
-        <div class="comparison-item">
-          <img id="originalImg" src="" alt="Original">
-          <p class="comparison-label">ORIGINAL</p>
-        </div>
-        <div class="comparison-item">
-          <img id="processedImg" src="" alt="Procesada">
-          <p class="comparison-label">PROCESADA</p>
-        </div>
-      </div>
-    </div>
   </div>
-  
+
   <script>
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.getElementById('fileInput');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const processBtn = document.getElementById('processBtn');
+    const downloadPngBtn = document.getElementById('downloadPngBtn');
+    const downloadSection = document.getElementById('downloadSection');
     const preview = document.getElementById('preview');
     const loading = document.getElementById('loading');
     const message = document.getElementById('message');
     const analysisResults = document.getElementById('analysisResults');
     const noResults = document.getElementById('noResults');
+    const resultsContent = document.getElementById('resultsContent');
     const comparisonPanel = document.getElementById('comparisonPanel');
     const customPromptInput = document.getElementById('customPrompt');
     const poreIntensitySlider = document.getElementById('poreIntensitySlider');
     const poreIntensityValue = document.getElementById('poreIntensityValue');
+    const poreIntensityLabel = document.getElementById('poreIntensityLabel');
     
     let currentFile = null;
     let selectedMode = 'standard';
     let poreIntensity = 1.0;
+    let processedImageUrl = null;
     
     // Selector de modo
     document.querySelectorAll('.mode-button').forEach(btn => {
@@ -551,17 +489,8 @@
     // Slider de intensidad de poros
     poreIntensitySlider.addEventListener('input', (e) => {
       poreIntensity = parseFloat(e.target.value);
-      const displayValue = poreIntensity.toFixed(1) + 'x';
-      poreIntensityValue.textContent = displayValue;
-      document.getElementById('poreIntensityLabel').textContent = displayValue;
-      
-      if (poreIntensity < 0.5) {
-        poreIntensityValue.style.color = '#0088ff';
-      } else if (poreIntensity > 2.5) {
-        poreIntensityValue.style.color = '#ff6600';
-      } else {
-        poreIntensityValue.style.color = '#00ff00';
-      }
+      poreIntensityValue.textContent = poreIntensity.toFixed(1) + 'x';
+      poreIntensityLabel.textContent = poreIntensity.toFixed(1) + 'x';
     });
     
     // Drag and drop
@@ -596,14 +525,10 @@
         return;
       }
       
-      if (file.size > 10 * 1024 * 1024) {
-        showError('La imagen debe ser menor a 10MB');
-        return;
-      }
-      
       currentFile = file;
       analyzeBtn.disabled = false;
       processBtn.disabled = false;
+      downloadSection.style.display = 'none';
       
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -671,8 +596,10 @@
         const data = await response.json();
         
         if (response.ok) {
+          processedImageUrl = data.processedImage;
           displayAnalysis(data.analysis);
           displayComparison(data.processedImage);
+          downloadSection.style.display = 'block';
           showSuccess(`✓ Procesamiento completado (modo: ${data.processingMode})`);
         } else {
           showError('Error: ' + data.error);
@@ -683,42 +610,94 @@
         loading.style.display = 'none';
       }
     });
+
+    downloadPngBtn.addEventListener('click', async () => {
+      if (!processedImageUrl) return;
+      
+      try {
+        showSuccess("Preparando descarga PNG aplanada...");
+        
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error("No se pudo cargar la imagen procesada"));
+          img.src = processedImageUrl;
+        });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+
+        // INSTRUCCIONES OBLIGATORIAS DE EXPORTACIÓN:
+        // 1. Fusionar todas las capas (Canvas lo hace por defecto al dibujar)
+        // 2. Eliminar canal alpha (Fondo blanco sólido)
+        // 3. Forzar fondo blanco sólido #FFFFFF
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 4. No exportar overlays/máscaras (Solo dibujamos la imagen procesada)
+        // 5. Rasterizar (Canvas es un elemento bitmap/rasterizado)
+        ctx.drawImage(img, 0, 0);
+
+        // 6. Una sola imagen bitmap final (PNG estándar sin alpha)
+        const dataUrl = canvas.toDataURL("image/png", 1.0);
+        
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = `huella_forense_final_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showSuccess("✓ Descarga completada (PNG Acoplado - Sin Transparencia)");
+      } catch (error) {
+        console.error("Error en la descarga:", error);
+        showError("Error al procesar la imagen para descarga: " + error.message);
+      }
+    });
     
     function displayAnalysis(analysis) {
-      document.getElementById('dimensions').textContent = `${analysis.width}x${analysis.height}px`;
-      document.getElementById('quality').textContent = analysis.quality + '%';
-      document.getElementById('ridgeDensity').textContent = analysis.ridgeDensity + '%';
-      document.getElementById('ridgeOrientation').textContent = analysis.ridgeOrientation;
-      document.getElementById('pattern').textContent = analysis.pattern;
-      document.getElementById('bifurcations').textContent = analysis.bifurcations;
-      document.getElementById('terminations').textContent = analysis.terminations;
+      let html = `
+        <div class="result-section">
+          <div class="result-section-title">📐 INFORMACIÓN BÁSICA</div>
+          <div class="result-item"><span class="result-label">Dimensiones:</span><span class="result-value">${analysis.width}x${analysis.height}px</span></div>
+          <div class="result-item"><span class="result-label">Calidad:</span><span class="result-value">${analysis.quality}%</span></div>
+        </div>
+        <div class="result-section">
+          <div class="result-section-title">〰️ ESTRUCTURA DE CRESTAS</div>
+          <div class="result-item"><span class="result-label">Densidad:</span><span class="result-value">${analysis.ridgeDensity}%</span></div>
+          <div class="result-item"><span class="result-label">Orientación:</span><span class="result-value">${analysis.ridgeOrientation}</span></div>
+          <div class="result-item"><span class="result-label">Patrón:</span><span class="result-value">${analysis.pattern}</span></div>
+        </div>
+        <div class="result-section">
+          <div class="result-section-title">📍 MINUCIAS DETECTADAS</div>
+          <div class="result-item"><span class="result-label">Bifurcaciones:</span><span class="result-value">${analysis.bifurcations}</span></div>
+          <div class="result-item"><span class="result-label">Terminaciones:</span><span class="result-value">${analysis.terminations}</span></div>
+        </div>
+        <div class="result-section">
+          <div class="result-section-title">🧬 TEXTURA DE MEMBRANA (IA)</div>
+          <div class="result-item"><span class="result-label">Tamaño de Poro:</span><span class="result-value">${analysis.poreSize}px</span></div>
+          <div class="result-item"><span class="result-label">Granularidad:</span><span class="result-value">${analysis.textureGranularity.granularity}%</span></div>
+        </div>
+      `;
       
-      if (analysis.coreLocation) {
-        document.getElementById('coreLocation').textContent = 
-          `(${analysis.coreLocation.x}, ${analysis.coreLocation.y})`;
-      }
-      
-      document.getElementById('deltaCount').textContent = 
-        (analysis.deltaLocations ? analysis.deltaLocations.length : 0) + ' puntos';
-      
-      document.getElementById('poreSize').textContent = analysis.poreSize + 'px';
-      document.getElementById('granularity').textContent = analysis.textureGranularity.granularity + '%';
-      document.getElementById('intensityMean').textContent = analysis.textureGranularity.mean;
-      document.getElementById('timestamp').textContent = new Date().toLocaleTimeString();
-      
+      resultsContent.innerHTML = html;
       analysisResults.style.display = 'block';
       noResults.style.display = 'none';
     }
     
-    function displayComparison(processedImageUrl) {
+    function displayComparison(processedUrl) {
       const reader = new FileReader();
       reader.onload = (e) => {
         document.getElementById('originalImg').src = e.target.result;
       };
       reader.readAsDataURL(currentFile);
       
-      document.getElementById('processedImg').src = processedImageUrl;
-      comparisonPanel.style.display = 'block';
+      document.getElementById('processedImg').src = processedUrl;
+      comparisonPanel.style.display = 'grid';
     }
     
     function showError(msg) {
