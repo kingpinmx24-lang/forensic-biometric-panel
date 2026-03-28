@@ -181,6 +181,10 @@
       background: #00aa00;
       color: #fff;
       border: 1px solid #00ff00;
+      width: 100%;
+      margin-top: 20px;
+      padding: 15px;
+      display: none;
     }
 
     .button-download:hover {
@@ -439,11 +443,9 @@
             </div>
           </div>
 
-          <div id="downloadSection" style="display: none; margin-top: 20px;">
-            <button class="button button-download" id="downloadPngBtn" style="width: 100%;">
-              📥 DESCARGAR PNG FINAL (ACOPLADO)
-            </button>
-          </div>
+          <button class="button button-download" id="downloadPngBtn">
+            📥 DESCARGAR PNG FINAL (ACOPLADO)
+          </button>
         </div>
         
         <div id="noResults" class="no-results">
@@ -459,7 +461,6 @@
     const analyzeBtn = document.getElementById('analyzeBtn');
     const processBtn = document.getElementById('processBtn');
     const downloadPngBtn = document.getElementById('downloadPngBtn');
-    const downloadSection = document.getElementById('downloadSection');
     const preview = document.getElementById('preview');
     const loading = document.getElementById('loading');
     const message = document.getElementById('message');
@@ -528,7 +529,7 @@
       currentFile = file;
       analyzeBtn.disabled = false;
       processBtn.disabled = false;
-      downloadSection.style.display = 'none';
+      downloadPngBtn.style.display = 'none';
       
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -576,7 +577,6 @@
       formData.append('fingerprint', currentFile);
       formData.append('mode', selectedMode);
       
-      // Construir prompt con intensidad de poros
       let finalPrompt = customPromptInput.value || '';
       if (poreIntensity !== 1.0) {
         const multiplier = Math.round(poreIntensity * 100) + '%';
@@ -599,7 +599,7 @@
           processedImageUrl = data.processedImage;
           displayAnalysis(data.analysis);
           displayComparison(data.processedImage);
-          downloadSection.style.display = 'block';
+          downloadPngBtn.style.display = 'block';
           showSuccess(`✓ Procesamiento completado (modo: ${data.processingMode})`);
         } else {
           showError('Error: ' + data.error);
@@ -611,51 +611,50 @@
       }
     });
 
+    // INGENIERÍA SENIOR: FUNCIÓN DE EXPORTACIÓN ROBUSTA (FLATTENED BITMAP)
     downloadPngBtn.addEventListener('click', async () => {
       if (!processedImageUrl) return;
       
       try {
-        showSuccess("Preparando descarga PNG aplanada...");
+        showSuccess("Preparando descarga PNG aplanada (High Fidelity)...");
         
         const img = new Image();
         img.crossOrigin = "anonymous";
         
         await new Promise((resolve, reject) => {
           img.onload = resolve;
-          img.onerror = () => reject(new Error("No se pudo cargar la imagen procesada"));
+          img.onerror = () => reject(new Error("No se pudo cargar la imagen para rasterización"));
           img.src = processedImageUrl;
         });
 
+        // 1. Inicialización de Canvas con contexto opaco (Senior Best Practice)
         const canvas = document.createElement("canvas");
         canvas.width = img.width;
         canvas.height = img.height;
-        const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d", { alpha: false }); // Forzar contexto opaco a nivel de sistema
 
-        // INSTRUCCIONES OBLIGATORIAS DE EXPORTACIÓN:
-        // 1. Fusionar todas las capas (Canvas lo hace por defecto al dibujar)
-        // 2. Eliminar canal alpha (Fondo blanco sólido)
-        // 3. Forzar fondo blanco sólido #FFFFFF
+        // 2. Garantizar fondo blanco sólido (Eliminación total de transparencia/alpha)
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // 4. No exportar overlays/máscaras (Solo dibujamos la imagen procesada)
-        // 5. Rasterizar (Canvas es un elemento bitmap/rasterizado)
+        // 3. Rasterización y Fusión (Flattening)
+        // Al dibujar sobre un contexto alpha:false con fondo sólido, el resultado es un bitmap de una sola capa
         ctx.drawImage(img, 0, 0);
 
-        // 6. Una sola imagen bitmap final (PNG estándar sin alpha)
+        // 4. Exportación a PNG estándar (Sin canal alfa, una sola capa visible en Photoshop)
         const dataUrl = canvas.toDataURL("image/png", 1.0);
         
         const link = document.createElement("a");
         link.href = dataUrl;
-        link.download = `huella_forense_final_${Date.now()}.png`;
+        link.download = `HUELLA_FORENSE_ACOPLADA_${Date.now()}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        showSuccess("✓ Descarga completada (PNG Acoplado - Sin Transparencia)");
+        showSuccess("✓ Descarga completada: PNG Aplanado (1 Capa, Fondo Blanco)");
       } catch (error) {
-        console.error("Error en la descarga:", error);
-        showError("Error al procesar la imagen para descarga: " + error.message);
+        console.error("Export Error:", error);
+        showError("Falla en exportación: " + error.message);
       }
     });
     
